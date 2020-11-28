@@ -1,0 +1,56 @@
+- hosts: all
+  tasks:
+    - file:
+        path: "/dvd2"
+        state: directory
+    - mount:
+        path: "/dvd2"
+        src: "/dev/sr0"
+        fstype: "iso9660"
+        state: mounted
+    - yum_repository:
+        name: "yumrepo1"
+        description: "yum repo to access AppStream"
+        baseurl: "file:///dvd2/AppStream"
+        gpgcheck: no
+    - yum_repository:
+        name: "yumrepo2"
+        description: "yum repo to access BaseOS"
+        baseurl: "file:///dvd2/BaseOS"
+        gpgcheck: no
+    - yum_repository:
+        name: "dockerrepo"
+        description: "yum repo to install docker"
+        baseurl: "https://download.docker.com/linux/centos/7/x86_64/stable/"
+        gpgcheck: no
+    - yum:
+        name: "docker-ce-3:18.09.1-3.el7.x86_64"
+        state: present
+        enablerepo: "dockerrepo"
+    - file:
+        path: "/webpages"
+        state: directory
+    - copy:
+        dest: /webpages/index.html
+        content: '<html><body><h1>Task10 Completed Successfully !!!</h1></body></html>'
+    - pip:
+        name: "docker"
+    - service:
+        name: "docker"
+        state: started
+        enabled: yes
+    - docker_image:
+        name: "httpd"
+        source: pull
+    - docker_container:
+        name: "os32"
+        image: "httpd"
+        state: started
+        detach: yes
+        ports: "85:80"
+        volumes: /webpages:/usr/local/apache2/htdocs/
+    - firewalld:
+        port: "85/tcp"
+        permanent: yes
+        state: enabled
+        immediate: yes
